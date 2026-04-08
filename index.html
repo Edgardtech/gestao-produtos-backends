@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestão de Produtos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body { background: #0d1117; color: #e6edf3; }
+    .navbar { background: #161b22 !important; border-bottom: 1px solid #30363d; }
+    .navbar-brand { color: #e6edf3 !important; font-weight: 800; font-size: 1.15rem; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; }
+    .form-control, .form-select { background: #0d1117 !important; border-color: #30363d !important; color: #e6edf3 !important; }
+    .form-control:focus, .form-select:focus { border-color: #7c6af7 !important; box-shadow: 0 0 0 3px rgba(124,106,247,.2) !important; }
+    .form-control::placeholder { color: #484860; }
+    .form-label { color: #8b949e; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .btn-primary { background: linear-gradient(135deg,#6c63ff,#48b0f1); border: none; font-weight: 700; }
+    .btn-primary:hover { opacity: .88; background: linear-gradient(135deg,#6c63ff,#48b0f1); }
+    .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.2rem; }
+    .stat-val { font-size: 1.7rem; font-weight: 800; }
+    table { background: #161b22; border-color: #30363d; }
+    thead th { background: #0d1117; color: #8b949e; font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; border-color: #30363d; }
+    td, th { border-color: #21262d !important; vertical-align: middle; }
+    tr:hover td { background: rgba(108,99,255,.04); }
+    .badge-cat { background: rgba(108,99,255,.18); color: #a89fff; border-radius: 20px; padding: .2rem .75rem; font-size: .76rem; font-weight: 600; }
+    .badge-ok { background: rgba(63,185,80,.15); color: #3fb950; border-radius: 20px; padding: .2rem .75rem; font-size: .76rem; font-weight: 600; }
+    .badge-low { background: rgba(240,192,106,.15); color: #f0c06a; border-radius: 20px; padding: .2rem .75rem; font-size: .76rem; font-weight: 600; }
+    .badge-zero { background: rgba(240,106,106,.15); color: #f06a6a; border-radius: 20px; padding: .2rem .75rem; font-size: .76rem; font-weight: 600; }
+    .price { color: #3fb950; font-weight: 700; }
+    .btn-sm { font-size: .8rem; padding: .3rem .6rem; border-radius: 7px; }
+    .btn-edit { background: transparent; border: 1px solid #30363d; color: #8b949e; }
+    .btn-edit:hover { border-color: #48b0f1; color: #48b0f1; }
+    .btn-del { background: transparent; border: 1px solid #30363d; color: #8b949e; }
+    .btn-del:hover { border-color: #f06a6a; color: #f06a6a; }
+    .modal-content { background: #161b22; border: 1px solid #30363d; border-radius: 14px; }
+    .modal-header { border-bottom: 1px solid #30363d; }
+    .modal-footer { border-top: 1px solid #30363d; }
+    .modal-title { color: #e6edf3; font-weight: 700; }
+    .btn-close { filter: invert(1); }
+    .toast-container { z-index: 9999; }
+    .empty-state { text-align: center; padding: 3rem; color: #484860; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4 sticky-top">
+  <span class="navbar-brand">📦 Gestão de Produtos</span>
+  <div class="ms-auto">
+    <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalProduto" onclick="abrirCriar()">
+      ＋ Novo Produto
+    </button>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 py-4" style="max-width:1200px">
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.4rem">📦</div>
+        <div class="stat-val text-primary mt-1" id="s1">—</div>
+        <div class="text-secondary" style="font-size:.8rem">Produtos</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.4rem">💰</div>
+        <div class="stat-val" style="color:#3fb950" id="s2">—</div>
+        <div class="text-secondary" style="font-size:.8rem">Valor total</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.4rem">🏷️</div>
+        <div class="stat-val" style="color:#a89fff" id="s3">—</div>
+        <div class="text-secondary" style="font-size:.8rem">Categorias</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.4rem">📊</div>
+        <div class="stat-val" style="color:#48b0f1" id="s4">—</div>
+        <div class="text-secondary" style="font-size:.8rem">Unidades</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="d-flex gap-2 flex-wrap mb-3">
+    <input type="text" id="searchInput" class="form-control" style="max-width:300px" placeholder="🔍  Buscar produto..." oninput="carregar()"/>
+    <select id="catFilter" class="form-select" style="max-width:200px" onchange="carregar()">
+      <option value="">Todas as categorias</option>
+      <option>Eletrônicos</option>
+      <option>Periféricos</option>
+      <option>Móveis</option>
+      <option>Áudio</option>
+      <option>Geral</option>
+    </select>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card overflow-hidden">
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th><th>Produto</th><th>Categoria</th>
+            <th>Preço</th><th>Estoque</th><th>Criado em</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalProduto" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitulo">Novo Produto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId"/>
+        <div class="mb-3">
+          <label class="form-label">Nome do produto *</label>
+          <input type="text" id="fNome" class="form-control" placeholder="Ex: Notebook Dell XPS"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Descrição</label>
+          <textarea id="fDesc" class="form-control" rows="2" placeholder="Descrição opcional..."></textarea>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label">Preço (R$) *</label>
+            <input type="number" id="fPreco" class="form-control" step="0.01" min="0" placeholder="0,00"/>
+          </div>
+          <div class="col">
+            <label class="form-label">Quantidade *</label>
+            <input type="number" id="fQtd" class="form-control" min="0" placeholder="0"/>
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Categoria</label>
+          <select id="fCat" class="form-select">
+            <option>Eletrônicos</option>
+            <option>Periféricos</option>
+            <option>Móveis</option>
+            <option>Áudio</option>
+            <option>Geral</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm px-4" onclick="salvar()">Salvar produto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toast" class="toast align-items-center border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body fw-600" id="toastMsg"></div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const bsModal = () => bootstrap.Modal.getInstance(document.getElementById('modalProduto'));
+
+  async function carregar() {
+    const q = document.getElementById('searchInput').value;
+    const cat = document.getElementById('catFilter').value;
+    let url = '/api/produtos?';
+    if (q) url += 'search=' + encodeURIComponent(q) + '&';
+    if (cat) url += 'categoria=' + encodeURIComponent(cat);
+    const data = await fetch(url).then(r => r.json());
+    const tbody = document.getElementById('tbody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Nenhum produto encontrado 🔍</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(p => {
+      const qtdCls = p.quantidade === 0 ? 'badge-zero' : p.quantidade < 5 ? 'badge-low' : 'badge-ok';
+      return `<tr>
+        <td><small class="text-secondary">#${p.id}</small></td>
+        <td><strong>${esc(p.nome)}</strong><br><small class="text-secondary">${esc(p.descricao||'')}</small></td>
+        <td><span class="badge-cat">${esc(p.categoria||'Geral')}</span></td>
+        <td><span class="price">R$ ${Number(p.preco).toFixed(2).replace('.',',')}</span></td>
+        <td><span class="${qtdCls}">${p.quantidade} un</span></td>
+        <td><small class="text-secondary">${new Date(p.created_at).toLocaleDateString('pt-BR')}</small></td>
+        <td>
+          <button class="btn btn-sm btn-edit me-1" onclick='abrirEditar(${JSON.stringify(p)})'>✏️</button>
+          <button class="btn btn-sm btn-del" onclick="deletar(${p.id})">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function carregarStats() {
+    const s = await fetch('/api/stats').then(r => r.json());
+    document.getElementById('s1').textContent = s.total;
+    document.getElementById('s2').textContent = 'R$ ' + Number(s.valor).toLocaleString('pt-BR', {maximumFractionDigits:0});
+    document.getElementById('s3').textContent = s.categorias;
+    document.getElementById('s4').textContent = s.estoque;
+  }
+
+  function abrirCriar() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitulo').textContent = 'Novo Produto';
+    ['fNome','fDesc','fPreco','fQtd'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fCat').value = 'Eletrônicos';
+  }
+
+  function abrirEditar(p) {
+    document.getElementById('editId').value = p.id;
+    document.getElementById('modalTitulo').textContent = 'Editar Produto';
+    document.getElementById('fNome').value = p.nome;
+    document.getElementById('fDesc').value = p.descricao || '';
+    document.getElementById('fPreco').value = p.preco;
+    document.getElementById('fQtd').value = p.quantidade;
+    document.getElementById('fCat').value = p.categoria || 'Geral';
+    new bootstrap.Modal(document.getElementById('modalProduto')).show();
+  }
+
+  async function salvar() {
+    const id = document.getElementById('editId').value;
+    const body = {
+      nome: document.getElementById('fNome').value.trim(),
+      descricao: document.getElementById('fDesc').value.trim(),
+      preco: parseFloat(document.getElementById('fPreco').value),
+      quantidade: parseInt(document.getElementById('fQtd').value),
+      categoria: document.getElementById('fCat').value
+    };
+    if (!body.nome || isNaN(body.preco) || isNaN(body.quantidade)) {
+      toast('Preencha nome, preço e quantidade.', false); return;
+    }
+    const res = await fetch(id ? `/api/produtos/${id}` : '/api/produtos', {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('modalProduto'))?.hide();
+      toast(id ? '✅ Produto atualizado!' : '✅ Produto criado!', true);
+      carregar(); carregarStats();
+    } else {
+      const e = await res.json(); toast('❌ ' + (e.error || 'Erro ao salvar.'), false);
+    }
+  }
+
+  async function deletar(id) {
+    if (!confirm('Remover este produto?')) return;
+    const res = await fetch('/api/produtos/' + id, { method: 'DELETE' });
+    if (res.ok) { toast('✅ Produto removido.', true); carregar(); carregarStats(); }
+    else toast('❌ Erro ao remover.', false);
+  }
+
+  function toast(msg, ok) {
+    const el = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    el.className = 'toast align-items-center border-0 text-bg-' + (ok ? 'success' : 'danger');
+    new bootstrap.Toast(el, { delay: 3000 }).show();
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  carregar();
+  carregarStats();
+</script>
+</body>
+</html>
